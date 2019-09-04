@@ -336,6 +336,6 @@ public class TreeController {
     }
 
     public InternalTreeNode getLastVisibleChild() {
-        return currentlyShowingItems.size() > 0 ? currentlyShowingItems.get(currentlyShowingItems.size() - 1).getInternalTreeNode() : null;
+        return currentlyShowingItems.size() > 0 ? ((ModelRendererPair)currentlyShowingItems.get(currentlyShowingItems.size() - 1)).getInternalTreeNode() : null;
     }
 }
