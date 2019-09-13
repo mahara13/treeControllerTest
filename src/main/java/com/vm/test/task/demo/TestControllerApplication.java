@@ -6,14 +6,14 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class TreecontrolerApplication {
+public class TestControllerApplication {
 
     public static void main(String[] args) {
 
-        SpringApplication.run(TreecontrolerApplication.class, args);
-       for (int i = 0; i <  20; i++) {
+        SpringApplication.run(TestControllerApplication.class, args);
+       for (int i = 0; i <  40; i++) {
            try {
-               Thread.sleep(10 * 1000);
+               Thread.sleep(30 * 1000);
            } catch (InterruptedException e) {
                e.printStackTrace();
            }
@@ -85,7 +85,7 @@ public class TreecontrolerApplication {
 
            if (true) {
                try {
-                   throw new Exception("new exp 6");
+                   throw new Exception("new exp 99");
                } catch (Exception e) {
                    e.printStackTrace();
                }
@@ -100,6 +100,7 @@ public class TreecontrolerApplication {
                System.out.println(e.getMessage());
            }
 
+           int r2 = (p / i) * 0;
            int r = p / i;
 
        }

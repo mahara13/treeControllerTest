@@ -2,8 +2,9 @@ package com.vm.test.oo;
 
 public class LevelFour {
     public int run() {
-        //For out of bounds test
+
         int [] arr =  new int[2];
+        arr[0] = new LevelFive().run();
         return arr[2];
     }
 }
