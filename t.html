@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<title>Advanced Search Report</title>
+<style>
+  body { font-family: Verdana, Geneva, 'Segoe UI', Arial, sans-serif; }
+  #search-results { border: 1px solid #ccc; max-width: 400px; margin-top: 2px; }
+  .result-item { padding: 5px; cursor: pointer; }
+  .result-item.active { background-color: #d0e0ff; }
+  #search-details { margin-top: 20px; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<input type="text" id="search-input" placeholder="Пошук..." />
+<button id="load-json-btn">Load local JSON</button>
+<input type="file" id="json-file-picker" accept=".json" style="display:none">
+
+<div id="search-results"></div>
+<div id="search-details"></div>
+
+<!-- Embedded JSON fallback -->
+<script id="search-data" type="application/json">
+[
+  {
+    "pib": "ПОЛЯКОВ Анатолій Русланович",
+    "ipn": "1234567890",
+    "posada": "Інженер",
+    "division": "Відділ 1",
+    "index_posadu": "001",
+    "date_prujniatia_posadu": "2025-01-01",
+    "zvidku_prubuv": "Київ",
+    "vud_slujbu": "",
+    "type_of_id_document": "Паспорт",
+    "seria_str_of_id_document": "AB123456",
+    "date_of_birth": "1990-05-12",
+    "place_of_birth": "Київ",
+    "gender": "Чоловік",
+    "kum_pruzvanuj": "",
+    "osvita": "Вища",
+    "dani_of_roduna": "",
+    "dodatkova_infa": "",
+    "phone_number": "0501234567",
+    "zvania": "Сержант",
+    "tp_zvidku_prubv": "Київ",
+    "vidsutni_peruiods": ["2025-02-01 до 2025-02-05"],
+    "tabel_short": "Eat -> вик -> X",
+    "vuclucheni_data": "2025-12-24 00:00:00",
+    "section_id": "section_12"
+  }
+]
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+  // --- Global state ---
+  let data = JSON.parse(document.getElementById("search-data").textContent);
+  let userData = data; // current active dataset
+  let currentIndex = -1; // for keyboard navigation
+  const input = document.getElementById("search-input");
+  const resultsBox = document.getElementById("search-results");
+  const detailsBox = document.getElementById("search-details");
+
+  // --- Load local JSON ---
+  const filePicker = document.getElementById("json-file-picker");
+  document.getElementById("load-json-btn").addEventListener("click", () => filePicker.click());
+  filePicker.addEventListener("change", (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        userData = JSON.parse(e.target.result);
+        input.dispatchEvent(new Event("input"));
+        alert("JSON file loaded successfully!");
+      } catch(err) {
+        alert("Invalid JSON file: " + err);
+      }
+    };
+    reader.readAsText(file, "utf-8");
+  });
+
+  // --- Search function ---
+  input.addEventListener("input", () => {
+    const q = input.value.trim().toLowerCase();
+    resultsBox.innerHTML = "";
+    currentIndex = -1;
+    if (q.length < 3) return;
+
+    // Prioritize startsWith
+    const starts = userData.filter(p => typeof p.pib === "string" && p.pib.toLowerCase().startsWith(q));
+    const contains = userData.filter(p => typeof p.pib === "string" && !p.pib.toLowerCase().startsWith(q) && p.pib.toLowerCase().includes(q));
+    const matches = [...starts, ...contains].slice(0, 10);
+
+    matches.forEach((p, idx) => {
+      const div = document.createElement("div");
+      div.className = "result-item";
+      div.textContent = p.pib;
+      div.dataset.index = idx;
+      div.onclick = () => selectPerson(p);
+      resultsBox.appendChild(div);
+    });
+  });
+
+  // --- Keyboard navigation ---
+  input.addEventListener("keydown", (e) => {
+    const items = Array.from(resultsBox.getElementsByClassName("result-item"));
+    if (!items.length) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      currentIndex = (currentIndex + 1) % items.length;
+      updateActiveItem(items);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      currentIndex = (currentIndex - 1 + items.length) % items.length;
+      updateActiveItem(items);
+    } else if (e.key === "Enter") {
+      if (currentIndex >= 0 && currentIndex < items.length) {
+        items[currentIndex].click();
+      }
+    }
+  });
+
+  function updateActiveItem(items) {
+    items.forEach((el, idx) => el.classList.toggle("active", idx === currentIndex));
+  }
+
+  // --- Select person and show details ---
+  function selectPerson(p) {
+    resultsBox.innerHTML = "";
+    input.value = p.pib;
+    currentIndex = -1;
+
+    const periodsHtml = Array.isArray(p.vidsutni_peruiods) && p.vidsutni_peruiods.length
+      ? `<ul>${p.vidsutni_peruiods.map(v => `<li>${v}</li>`).join("")}</ul>`
+      : `<i>Немає</i>`;
+
+    detailsBox.innerHTML = `
+      <div style="line-height:1.6;font-family: Verdana, Geneva, 'Segoe UI', Arial, sans-serif;font-size: 13px;">
+        <div style="margin-bottom:10px;"><b style="font-size:1.1em;">${p.pib}</b></div>
+
+        <div style="display:flex;align-items:center;width:100%;margin-bottom:8px;">
+          <div style="flex:0 0 auto;"><b>Стать:</b> ${p.gender}</div>
+          <div style="flex:1 1 auto;text-align:center;"><b>Посада:</b> ${p.posada}</div>
+          <div style="flex:0 0 auto;"><b>Звання:</b> ${p.zvania}</div>
+        </div>
+
+        <div style="display:flex;align-items:center;width:100%;margin-bottom:8px;">
+          <div style="flex:0 0 auto;"><b>${p.type_of_id_document}:</b> ${p.seria_str_of_id_document}</div>
+          <div style="flex:1 1 auto;text-align:center;"><b>ІПН:</b> ${p.ipn}</div>
+          <div style="flex:0 0 auto;"><b>Тел:</b> ${p.phone_number}</div>
+        </div>
+
+        <div style="display:flex;align-items:center;width:100%;margin-bottom:8px;">
+          <div style="flex:0 0 auto;"><b>Народився:</b> ${p.place_of_birth}</div>
+          <div style="flex:1 1 auto;text-align:center;"><b>${p.date_of_birth}</b></div>
+          <div style="flex:0 0 auto;"><b>Освіта:</b> ${p.osvita}</div>
+        </div>
+
+        <div style="margin-bottom:8px;width:100%">
+          <b>Додаткова інформація:</b> ${p.dodatkova_infa || "<i>—</i>"}
+        </div>
+
+        <div style="margin-bottom:8px;width:100%">
+          <b>Періоди відсутності:</b> ${periodsHtml}
+        </div>
+      </div>
+    `;
+  }
+
+});
+</script>
+
+</body>
+</html>
